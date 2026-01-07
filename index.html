@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Zone - Learn Smarter</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- AOS (animation library – previously aos.js) -->
+    <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+
+    <style>
+        /* UI feedback (from ui.js responsibilities) */
+        .loading, .error {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.85;
+        }
+        .error { color: #c0392b; }
+
+        .video-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .video-card:hover {
+            transform: translateY(-6px);
+        }
+    </style>
+</head>
+
+<body>
+
+<header data-aos="fade-down">
+    <div class="header-content">
+        <h1>Study Zone</h1>
+        <p>Learn Smarter. Learn Free.</p>
+    </div>
+</header>
+
+<div class="search-wrapper" data-aos="fade-up">
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="What do you want to learn today?">
+        <button id="searchBtn">Search</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <section id="results-area">
+        <h2 id="results-title">Featured Learning Resources</h2>
+
+        <div class="video-grid" id="videoGrid">
+            <div class="empty-state">
+                <p>Start typing to discover world-class free education.</p>
+            </div>
+        </div>
+    </section>
+
+    <hr>
+
+    <section id="about" data-aos="fade-up">
+        <h2>About Study Zone</h2>
+        <p>Curated, distraction-free learning.</p>
+    </section>
+
+</div>
+
+<!-- GSAP (previously gsap.js) -->
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+
+<!-- AOS -->
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+
+<script>
+/* ======================================================
+   CONFIG.JS  (merged)
+====================================================== */
+const CONFIG = {
+    API_KEY: 'AIzaSyDUzI8a3ximSjnXIH46JbrqTtw6-ZDxe2c',
+    BASE_URL: 'https://www.googleapis.com/youtube/v3/search',
+    MAX_RESULTS: 6,
+    EMBED_URL: 'https://www.youtube-nocookie.com/embed/',
+    EMBED_PARAMS: '?rel=0&modestbranding=1',
+    CACHE_DURATION: 3600000
+};
+
+/* ======================================================
+   UI.JS  (merged)
+====================================================== */
+function showLoading() {
+    videoGrid.innerHTML = `<div class="loading">Finding the best resources…</div>`;
+}
+
+function showError(msg) {
+    videoGrid.innerHTML = `<div class="error">${msg}</div>`;
+}
+
+function clearGrid() {
+    videoGrid.innerHTML = "";
+}
+
+/* ======================================================
+   MAIN.JS  (merged)
+====================================================== */
+const input = document.getElementById("searchInput");
+const button = document.getElementById("searchBtn");
+const videoGrid = document.getElementById("videoGrid");
+const title = document.getElementById("results-title");
+
+let debounceTimer;
+
+button.addEventListener("click", searchVideos);
+input.addEventListener("keypress", e => {
+    if (e.key === "Enter") searchVideos();
+});
+
+input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(searchVideos, 600);
+});
+
+async function searchVideos() {
+    const query = input.value.trim();
+    if (!query) return;
+
+    title.textContent = `Searching for "${query}"…`;
+    showLoading();
+
+    const cacheKey = `yt_${query}`;
+    const cached = sessionStorage.getItem(cacheKey);
+
+    if (cached) {
+        renderVideos(JSON.parse(cached));
+        return;
+    }
+
+    try {
+        const url =
+            `${CONFIG.BASE_URL}?part=snippet&q=${query}&type=video&order=viewCount` +
+            `&maxResults=${CONFIG.MAX_RESULTS}&key=${CONFIG.API_KEY}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.error) throw new Error(data.error.message);
+
+        sessionStorage.setItem(cacheKey, JSON.stringify(data.items));
+        renderVideos(data.items);
+
+    } catch (err) {
+        showError(err.message);
+    }
+}
+
+/* ======================================================
+   RENDER LOGIC
+====================================================== */
+function renderVideos(items) {
+    clearGrid();
+    title.textContent = "Learning Resources";
+
+    items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "video-card";
+        card.innerHTML = `
+            <div class="video-container">
+                <iframe
+                    src="${CONFIG.EMBED_URL}${item.id.videoId}${CONFIG.EMBED_PARAMS}"
+                    allowfullscreen></iframe>
+            </div>
+            <div class="video-info">
+                <h3>${item.snippet.title}</h3>
+                <p>By ${item.snippet.channelTitle}</p>
+            </div>
+        `;
+        videoGrid.appendChild(card);
+    });
+
+    gsap.from(".video-card", {
+        opacity: 0,
+        y: 20,
+        stagger: 0.1,
+        duration: 0.5
+    });
+}
+
+/* ======================================================
+   AOS + GSAP INIT (merged aos.js + gsap.js)
+====================================================== */
+AOS.init({ once: true });
+
+gsap.from(".header-content", {
+    y: -20,
+    opacity: 0,
+    duration: 0.8
+});
+</script>
+
+</body>
+</html>
