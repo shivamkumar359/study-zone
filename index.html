@@ -1,200 +1,462 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Zone - Learn Smarter</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <title>Study Zone - Distraction-Free Learning Environment</title>
+    <meta name="title" content="Study Zone - Distraction-Free Learning">
+    <meta name="description" content="A curated, distraction-free search engine for educational videos. Focus on learning Mathematics, Science, and Coding without the noise.">
+    <meta name="keywords" content="education, learning, youtube api, free courses, study tools">
+    <meta name="author" content="Study Zone Team">
 
-    <link rel="stylesheet" href="style.css">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://studyzone.com/">
+    <meta property="og:title" content="Study Zone - Learn Smarter">
+    <meta property="og:description" content="Master new skills without the distractions. Free educational video search.">
+    <meta property="og:image" content="https://via.placeholder.com/1200x630.png?text=Study+Zone+Preview">
 
-    <!-- AOS (animation library – previously aos.js) -->
-    <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css"> <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
 
     <style>
-        /* UI feedback (from ui.js responsibilities) */
-        .loading, .error {
-            text-align: center;
-            padding: 30px;
-            opacity: 0.85;
+        :root {
+            /* Color Variables for easy theming */
+            --primary-color: #4a90e2;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-light: #7f8c8d;
+            --shadow-soft: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-hover: 0 10px 15px rgba(0,0,0,0.15);
         }
-        .error { color: #c0392b; }
 
+        /* Reset & Base Styles */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Typography */
+        h1, h2, h3 { color: var(--secondary-color); margin-bottom: 0.5em; }
+        a { color: var(--primary-color); text-decoration: none; transition: 0.2s; }
+        a:hover { color: var(--secondary-color); }
+
+        /* Header Section */
+        header {
+            background: linear-gradient(135deg, var(--secondary-color), #34495e);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        header h1 { color: white; font-size: 3rem; margin-bottom: 10px; }
+        header p { font-size: 1.2rem; opacity: 0.8; }
+
+        /* Search Section */
+        .search-wrapper {
+            margin-top: -30px; /* Overlap effect */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .search-container {
+            background: white;
+            padding: 10px;
+            border-radius: 50px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        #searchInput {
+            border: none;
+            outline: none;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            flex: 1;
+            border-radius: 50px;
+        }
+
+        #searchBtn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        #searchBtn:hover { background: #357abd; }
+
+        /* Quick Chips (New Feature) */
+        .quick-chips {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .chip {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-light);
+        }
+        .chip:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            flex: 1; /* Pushes footer down */
+            width: 100%;
+        }
+
+        /* Grid System */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        /* Cards */
         .video-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .video-card:hover {
             transform: translateY(-6px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            background: #000;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%; border: 0;
+        }
+
+        .video-info { padding: 20px; }
+        .video-info h3 { font-size: 1.1rem; margin-bottom: 8px; line-height: 1.4; }
+        .video-info p { color: var(--text-light); font-size: 0.9rem; }
+
+        /* UI States */
+        .loading, .error, .empty-state {
+            text-align: center;
+            padding: 40px;
+            grid-column: 1 / -1; /* Span full width */
+            color: var(--text-light);
+        }
+        .error { color: var(--accent-color); background: #fdedec; border-radius: 8px; }
+
+        /* About Section */
+        #about {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 2px solid #eee;
+        }
+        .about-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-soft);
+        }
+        .about-content h3 { color: var(--primary-color); margin-top: 20px; }
+        .tech-links a { 
+            display: inline-block; 
+            margin-right: 15px; 
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        /* Footer (New Feature) */
+        footer {
+            background: var(--secondary-color);
+            color: #bdc3c7;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 60px;
+        }
+        footer p { font-size: 0.9rem; }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            header h1 { font-size: 2rem; }
+            .search-container { flex-direction: column; border-radius: 12px; padding: 15px; }
+            #searchInput { width: 100%; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+            #searchBtn { width: 100%; }
         }
     </style>
 </head>
 
 <body>
 
-<header data-aos="fade-down">
-    <div class="header-content">
-        <h1>Study Zone</h1>
-        <p>Learn Smarter. Learn Free.</p>
-    </div>
-</header>
-
-<div class="search-wrapper" data-aos="fade-up">
-    <div class="search-container">
-        <input type="text" id="searchInput" placeholder="What do you want to learn today?">
-        <button id="searchBtn">Search</button>
-    </div>
-</div>
-
-<div class="container">
-
-    <section id="results-area">
-        <h2 id="results-title">Featured Learning Resources</h2>
-
-        <div class="video-grid" id="videoGrid">
-            <div class="empty-state">
-                <p>Start typing to discover world-class free education.</p>
-            </div>
+    <header data-aos="fade-down">
+        <div class="header-content">
+            <h1>Study Zone</h1>
+            <p>Learn Smarter. Learn Free.</p>
         </div>
-    </section>
+    </header>
 
-    <hr>
+    <div class="search-wrapper" data-aos="fade-up">
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="What do you want to learn today?" aria-label="Search topics">
+            <button id="searchBtn" aria-label="Search">Search</button>
+        </div>
+        
+        <div class="quick-chips">
+            <span class="chip" onclick="searchByChip('Calculus')">🧮 Calculus</span>
+            <span class="chip" onclick="searchByChip('Learn Python')">🐍 Python</span>
+            <span class="chip" onclick="searchByChip('World History')">🌍 History</span>
+            <span class="chip" onclick="searchByChip('Astrophysics')">🚀 Space</span>
+            <span class="chip" onclick="searchByChip('Digital Marketing')">📊 Marketing</span>
+        </div>
+    </div>
 
-    <section id="about" data-aos="fade-up">
-        <h2>About Study Zone</h2>
-        <p>Curated, distraction-free learning.</p>
-    </section>
+    <main class="container">
+        
+        <section id="results-area">
+            <h2 id="results-title">Featured Learning Resources</h2>
 
-</div>
-
-<!-- GSAP (previously gsap.js) -->
-<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
-
-<!-- AOS -->
-<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-
-<script>
-/* ======================================================
-   CONFIG.JS  (merged)
-====================================================== */
-const CONFIG = {
-    API_KEY: 'AIzaSyDUzI8a3ximSjnXIH46JbrqTtw6-ZDxe2c',
-    BASE_URL: 'https://www.googleapis.com/youtube/v3/search',
-    MAX_RESULTS: 6,
-    EMBED_URL: 'https://www.youtube-nocookie.com/embed/',
-    EMBED_PARAMS: '?rel=0&modestbranding=1',
-    CACHE_DURATION: 3600000
-};
-
-/* ======================================================
-   UI.JS  (merged)
-====================================================== */
-function showLoading() {
-    videoGrid.innerHTML = `<div class="loading">Finding the best resources…</div>`;
-}
-
-function showError(msg) {
-    videoGrid.innerHTML = `<div class="error">${msg}</div>`;
-}
-
-function clearGrid() {
-    videoGrid.innerHTML = "";
-}
-
-/* ======================================================
-   MAIN.JS  (merged)
-====================================================== */
-const input = document.getElementById("searchInput");
-const button = document.getElementById("searchBtn");
-const videoGrid = document.getElementById("videoGrid");
-const title = document.getElementById("results-title");
-
-let debounceTimer;
-
-button.addEventListener("click", searchVideos);
-input.addEventListener("keypress", e => {
-    if (e.key === "Enter") searchVideos();
-});
-
-input.addEventListener("input", () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(searchVideos, 600);
-});
-
-async function searchVideos() {
-    const query = input.value.trim();
-    if (!query) return;
-
-    title.textContent = `Searching for "${query}"…`;
-    showLoading();
-
-    const cacheKey = `yt_${query}`;
-    const cached = sessionStorage.getItem(cacheKey);
-
-    if (cached) {
-        renderVideos(JSON.parse(cached));
-        return;
-    }
-
-    try {
-        const url =
-            `${CONFIG.BASE_URL}?part=snippet&q=${query}&type=video&order=viewCount` +
-            `&maxResults=${CONFIG.MAX_RESULTS}&key=${CONFIG.API_KEY}`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.error) throw new Error(data.error.message);
-
-        sessionStorage.setItem(cacheKey, JSON.stringify(data.items));
-        renderVideos(data.items);
-
-    } catch (err) {
-        showError(err.message);
-    }
-}
-
-/* ======================================================
-   RENDER LOGIC
-====================================================== */
-function renderVideos(items) {
-    clearGrid();
-    title.textContent = "Learning Resources";
-
-    items.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "video-card";
-        card.innerHTML = `
-            <div class="video-container">
-                <iframe
-                    src="${CONFIG.EMBED_URL}${item.id.videoId}${CONFIG.EMBED_PARAMS}"
-                    allowfullscreen></iframe>
+            <div class="video-grid" id="videoGrid">
+                <div class="empty-state">
+                    <p>Start typing or select a tag above to discover world-class free education.</p>
+                </div>
             </div>
-            <div class="video-info">
-                <h3>${item.snippet.title}</h3>
-                <p>By ${item.snippet.channelTitle}</p>
+        </section>
+
+        <section id="about" data-aos="fade-up">
+            <h2>About Study Zone</h2>
+            
+            <div class="about-content">
+                <p>
+                    Study Zone is a curated, distraction-free environment designed to help you focus on learning. 
+                    By filtering out the noise of standard social media algorithms, we ensure your time is spent 
+                    mastering new skills, not scrolling through shorts.
+                </p>
+
+                <h3>How it Works</h3>
+                <ul>
+                    <li><strong>Search:</strong> Enter any topic (e.g., "Quantum Physics", "Learn Python").</li>
+                    <li><strong>Curate:</strong> We fetch the most relevant, high-quality educational videos via API.</li>
+                    <li><strong>Focus:</strong> Watch videos directly in our clean interface without sidebar distractions.</li>
+                </ul>
+
+                <h3>Technology Stack</h3>
+                <p>This application is powered by the following open-source technologies:</p>
+                
+                <div class="tech-links">
+                    <a href="https://developers.google.com/youtube/v3" target="_blank" rel="noopener noreferrer">YouTube Data API v3</a>
+                    <a href="https://greensock.com/gsap/" target="_blank" rel="noopener noreferrer">GSAP Animation</a>
+                    <a href="https://michalsnik.github.io/aos/" target="_blank" rel="noopener noreferrer">AOS Library</a>
+                </div>
             </div>
-        `;
-        videoGrid.appendChild(card);
+        </section>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Study Zone. All rights reserved.</p>
+        <p><small>Content provided by YouTube API. Videos belong to respective owners.</small></p>
+    </footer>
+
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+
+    <script>
+    /* --- CONFIGURATION --- */
+    const CONFIG = {
+        API_KEY: 'AIzaSyDUzI8a3ximSjnXIH46JbrqTtw6-ZDxe2c', // Ensure this key is valid
+        BASE_URL: 'https://www.googleapis.com/youtube/v3/search',
+        MAX_RESULTS: 9, // Increased to 9 for better grid layout
+        EMBED_URL: 'https://www.youtube-nocookie.com/embed/',
+        EMBED_PARAMS: '?rel=0&modestbranding=1',
+        CACHE_DURATION: 3600000 // 1 Hour in milliseconds
+    };
+
+    /* --- DOM ELEMENTS --- */
+    const input = document.getElementById("searchInput");
+    const button = document.getElementById("searchBtn");
+    const videoGrid = document.getElementById("videoGrid");
+    const title = document.getElementById("results-title");
+
+    let debounceTimer;
+
+    /* --- EVENT LISTENERS --- */
+    button.addEventListener("click", () => searchVideos()); // Wrapped in arrow function for safety
+    
+    input.addEventListener("keypress", e => {
+        if (e.key === "Enter") searchVideos();
     });
 
-    gsap.from(".video-card", {
+    input.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => searchVideos(), 600);
+    });
+
+    /* --- HELPER FUNCTION: CHIP SEARCH --- */
+    function searchByChip(topic) {
+        input.value = topic;
+        searchVideos(topic);
+    }
+
+    /* --- UI HELPERS --- */
+    function showLoading() {
+        videoGrid.innerHTML = `<div class="loading">
+            <h3>Finding the best resources for you...</h3>
+            <p>Scanning library...</p>
+        </div>`;
+    }
+
+    function showError(msg) {
+        videoGrid.innerHTML = `
+            <div class="error">
+                <h3>Oops! Something went wrong.</h3>
+                <p>${msg}</p>
+                <button onclick="location.reload()" style="margin-top:10px; padding:5px 10px; cursor:pointer;">Try Again</button>
+            </div>`;
+    }
+
+    function clearGrid() {
+        videoGrid.innerHTML = "";
+    }
+
+    /* --- MAIN SEARCH LOGIC --- */
+    async function searchVideos(overrideQuery = null) {
+        // Use overrideQuery if provided (from chips), otherwise use input
+        const query = overrideQuery || input.value.trim();
+        
+        if (!query) return;
+
+        // UI Updates
+        title.textContent = `Results for: "${query}"`;
+        showLoading();
+
+        // 1. Check Cache
+        const cacheKey = `yt_v2_${query.toLowerCase()}`; // Versioned cache key
+        const cached = sessionStorage.getItem(cacheKey);
+
+        if (cached) {
+            console.log("Serving from cache");
+            renderVideos(JSON.parse(cached));
+            return;
+        }
+
+        // 2. Fetch Data
+        try {
+            const url = `${CONFIG.BASE_URL}?part=snippet&q=${query}&type=video&order=viewCount&maxResults=${CONFIG.MAX_RESULTS}&key=${CONFIG.API_KEY}`;
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.error) {
+                // Specific error handling for Quota limits
+                if(data.error.code === 403) {
+                    throw new Error("Daily API Limit Reached. Please try again tomorrow.");
+                }
+                throw new Error(data.error.message);
+            }
+
+            if (data.items.length === 0) {
+                videoGrid.innerHTML = `<div class="empty-state">No videos found. Try a different term.</div>`;
+                return;
+            }
+
+            // 3. Save to Cache
+            sessionStorage.setItem(cacheKey, JSON.stringify(data.items));
+            
+            // 4. Render
+            renderVideos(data.items);
+
+        } catch (err) {
+            console.error("Search Error:", err);
+            showError(err.message);
+        }
+    }
+
+    /* --- RENDER FUNCTION --- */
+    function renderVideos(items) {
+        clearGrid();
+        
+        items.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "video-card";
+            
+            // Safety check for thumbnails vs embeds
+            card.innerHTML = `
+                <div class="video-container">
+                    <iframe 
+                        src="${CONFIG.EMBED_URL}${item.id.videoId}${CONFIG.EMBED_PARAMS}" 
+                        title="${item.snippet.title}"
+                        loading="lazy"
+                        allowfullscreen></iframe>
+                </div>
+                <div class="video-info">
+                    <h3>${item.snippet.title}</h3>
+                    <p>By ${item.snippet.channelTitle} • ${new Date(item.snippet.publishedAt).getFullYear()}</p>
+                </div>
+            `;
+            videoGrid.appendChild(card);
+        });
+
+        // Trigger Animation
+        gsap.from(".video-card", {
+            opacity: 0,
+            y: 30,
+            stagger: 0.1,
+            duration: 0.6,
+            ease: "power2.out"
+        });
+    }
+
+    /* --- INITIALIZATION --- */
+    // Initialize AOS
+    AOS.init({ 
+        once: true,
+        offset: 100,
+        duration: 800
+    });
+
+    // Initialize Header Animation
+    gsap.from(".header-content", {
+        y: -30,
         opacity: 0,
-        y: 20,
-        stagger: 0.1,
-        duration: 0.5
+        duration: 1,
+        ease: "power3.out"
     });
-}
-
-/* ======================================================
-   AOS + GSAP INIT (merged aos.js + gsap.js)
-====================================================== */
-AOS.init({ once: true });
-
-gsap.from(".header-content", {
-    y: -20,
-    opacity: 0,
-    duration: 0.8
-});
-</script>
+    </script>
 
 </body>
 </html>
